@@ -453,10 +453,15 @@
                 }
                 
                 // 2→2 transition
-                const lowerBound = safeDivision((2 * (r - t) + e * (-p - r + s + t)), 
-                                       ((-1 + e) * (2 * (-1 + e) * p + 2 * t - e * (s + t))));
-                const upperBound = safeDivision((-(((-2 + e) * p) - 2 * s + e * (-r + s + t))), 
-                                       ((-1 + e) * (2 * (-1 + e) * p - (-2 + e) * s - e * t)));
+                const lowerBound = safeDivision((2 * (r - t) + e * (-p - r + s + t)),
+                                        ((-1 + e) * (2 * (-1 + e) * p + 2 * t - e * (s + t))));
+                const upperBound = safeDivision(((-((-2 + e) * p) - 2 * s + e * (-r + s + t))), 
+                                        ((-1 + e) * (2 * (-1 + e) * p - (-2 + e) * s - e * t)));
+
+                // lower_bound = safe_division((2 * (r - t) + e * (-p - r + s + t)), 
+                //                    ((-1 + e) * (2 * (-1 + e) * p + 2 * t - e * (s + t))))
+                // upper_bound = safe_division(((-((-2 + e) * p) - 2 * s + e * (-r + s + t))), 
+                //                    ((-1 + e) * (2 * (-1 + e) * p - (-2 + e) * s - e * t)))
                 
                 if (lowerBound < d && d < upperBound) {
                     return 2;
