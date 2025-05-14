@@ -76,6 +76,20 @@
             text-align: right;
             color: #555;
         }
+        .visualization-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .visualization-toggle label {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: normal;
+        }
+        .visualization-toggle input {
+            margin-right: 5px;
+        }
         @media (max-width: 768px) {
             .control-group {
                 min-width: 100%;
@@ -87,7 +101,7 @@
     <h1>State Space - Best Response Strategies</h1>
     
     <div class="description">
-        <p>Visualization for regions best response strategies based on selected parameters in the prisoner's dilemma environment. Choose a state space (Win-Stay-Lose-Shift or Grim-Trigger), two parameters to display on the graph, and then choose an initial strategy and a target strategy. This will generate a graph which shows for what regions in the chosen parameters is the target strategy a best response to the initial strategy.</p>
+        <p>Visualization for best response strategies based on selected parameters in the prisoner's dilemma environment. Choose a state space (Win-Stay-Lose-Shift or Grim-Trigger) and visualization type. For the heatmap view, select two parameters to display on the graph along with an initial strategy and a target strategy. For the network graph view, the visualization shows how each strategy responds to the others given the fixed parameter values.</p>
         
         <div class="assumptions">
             Assumptions:
@@ -102,16 +116,28 @@
     
     <div class="control-panel">
         <div class="control-group">
-            <h3>State Space</h3>
+            <h3>State Space & Visualization</h3>
             <label for="state-space">Select State Space:</label>
             <select id="state-space">
                 <option value="wsls" selected>Win-Stay-Lose-Shift (WSLS)</option>
                 <option value="gt">Grim-Trigger (GT)</option>
             </select>
+            
+            <div class="visualization-toggle">
+                <h4>Visualization Type:</h4>
+                <label>
+                    <input type="radio" name="visualization-type" value="heatmap" checked>
+                    Parameter Heatmap
+                </label>
+                <label>
+                    <input type="radio" name="visualization-type" value="network">
+                    Network Graph
+                </label>
+            </div>
         </div>
         
-        <div class="control-group">
-            <h3>Parameters to Graph</h3>
+        <div class="control-group heatmap-controls">
+            <h3>Parameters to Graph (Heatmap View)</h3>
             <label for="x-axis">X-Axis Parameter:</label>
             <select id="x-axis">
                 <option value="e">e - Exploration Rate</option>
@@ -133,8 +159,8 @@
             </select>
         </div>
         
-        <div class="control-group">
-            <h3>States</h3>
+        <div class="control-group heatmap-controls">
+            <h3>States (Heatmap View)</h3>
             <label for="initial-state">Initial State:</label>
             <select id="initial-state">
                 <option value="0">State (0,0) - All D</option>
@@ -160,7 +186,7 @@
         </div>
     </div>
     
-    <button id="generate-btn">Generate Plot</button>
+    <button id="generate-btn">Generate Visualization</button>
     
     <div id="plot" class="plot-container"></div>
     
@@ -206,6 +232,22 @@
                 1: "(0,1) - Anti-GT",
                 2: "(1,0) - GT",
                 3: "(1,1) - All C"
+            }
+        };
+
+        // Define shorter state labels for network diagram
+        const shortStateLabels = {
+            wsls: {
+                0: "All D",
+                1: "Anti-WSLS",
+                2: "WSLS",
+                3: "All C"
+            },
+            gt: {
+                0: "All D",
+                1: "Anti-GT",
+                2: "GT",
+                3: "All C"
             }
         };
 
@@ -457,11 +499,6 @@
                                         ((-1 + e) * (2 * (-1 + e) * p + 2 * t - e * (s + t))));
                 const upperBound = safeDivision(((-((-2 + e) * p) - 2 * s + e * (-r + s + t))), 
                                         ((-1 + e) * (2 * (-1 + e) * p - (-2 + e) * s - e * t)));
-
-                // lower_bound = safe_division((2 * (r - t) + e * (-p - r + s + t)), 
-                //                    ((-1 + e) * (2 * (-1 + e) * p + 2 * t - e * (s + t))))
-                // upper_bound = safe_division(((-((-2 + e) * p) - 2 * s + e * (-r + s + t))), 
-                //                    ((-1 + e) * (2 * (-1 + e) * p - (-2 + e) * s - e * t)))
                 
                 if (lowerBound < d && d < upperBound) {
                     return 2;
@@ -558,58 +595,71 @@
 
         // Function to create parameter sliders
         function createSliders() {
-            const xAxis = document.getElementById('x-axis').value;
-            const yAxis = document.getElementById('y-axis').value;
             const slidersContainer = document.getElementById('sliders-container');
+            const visualizationType = document.querySelector('input[name="visualization-type"]:checked').value;
             
             // Clear existing sliders
             slidersContainer.innerHTML = '';
             
-            // Create sliders for all parameters except x and y axes
-            for (const param of ['t', 'r', 'p', 's', 'd', 'e']) {
-                if (param !== xAxis && param !== yAxis) {
-                    const sliderContainer = document.createElement('div');
-                    sliderContainer.className = 'slider-container';
-                    
-                    const labelContainer = document.createElement('div');
-                    labelContainer.style.display = 'flex';
-                    labelContainer.style.justifyContent = 'space-between';
-                    
-                    const label = document.createElement('label');
-                    label.textContent = paramLabels[param];
-                    label.setAttribute('for', `${param}-slider`);
-                    
-                    const valueDisplay = document.createElement('span');
-                    valueDisplay.id = `${param}-value`;
-                    valueDisplay.className = 'value-display';
-                    valueDisplay.textContent = paramDefaults[param].toFixed(2);
-                    
-                    labelContainer.appendChild(label);
-                    labelContainer.appendChild(valueDisplay);
-                    
-                    const slider = document.createElement('input');
-                    slider.type = 'range';
-                    slider.id = `${param}-slider`;
-                    slider.min = paramRanges[param].min;
-                    slider.max = paramRanges[param].max;
-                    slider.step = 0.01;
-                    slider.value = paramDefaults[param];
-                    
-                    slider.addEventListener('input', function() {
-                        valueDisplay.textContent = Number(this.value).toFixed(2);
-                    });
-                    
-                    sliderContainer.appendChild(labelContainer);
-                    sliderContainer.appendChild(slider);
-                    slidersContainer.appendChild(sliderContainer);
+            if (visualizationType === 'heatmap') {
+                // For heatmap, create sliders for all parameters except x and y axes
+                const xAxis = document.getElementById('x-axis').value;
+                const yAxis = document.getElementById('y-axis').value;
+                
+                for (const param of ['t', 'r', 'p', 's', 'd', 'e']) {
+                    if (param !== xAxis && param !== yAxis) {
+                        createSlider(param, slidersContainer);
+                    }
+                }
+            } else {
+                // For network graph, create sliders for all parameters
+                for (const param of ['t', 'r', 'p', 's', 'd', 'e']) {
+                    createSlider(param, slidersContainer);
                 }
             }
+        }
+        
+        // Helper function to create a single slider
+        function createSlider(param, container) {
+            const sliderContainer = document.createElement('div');
+            sliderContainer.className = 'slider-container';
+            
+            const labelContainer = document.createElement('div');
+            labelContainer.style.display = 'flex';
+            labelContainer.style.justifyContent = 'space-between';
+            
+            const label = document.createElement('label');
+            label.textContent = paramLabels[param];
+            label.setAttribute('for', `${param}-slider`);
+            
+            const valueDisplay = document.createElement('span');
+            valueDisplay.id = `${param}-value`;
+            valueDisplay.className = 'value-display';
+            valueDisplay.textContent = paramDefaults[param].toFixed(2);
+            
+            labelContainer.appendChild(label);
+            labelContainer.appendChild(valueDisplay);
+            
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.id = `${param}-slider`;
+            slider.min = paramRanges[param].min;
+            slider.max = paramRanges[param].max;
+            slider.step = 0.01;
+            slider.value = paramDefaults[param];
+            
+            slider.addEventListener('input', function() {
+                valueDisplay.textContent = Number(this.value).toFixed(2);
+            });
+            
+            sliderContainer.appendChild(labelContainer);
+            sliderContainer.appendChild(slider);
+            container.appendChild(sliderContainer);
         }
 
         // Function to get current parameter values
         function getParameterValues() {
-            const xAxis = document.getElementById('x-axis').value;
-            const yAxis = document.getElementById('y-axis').value;
+            const visualizationType = document.querySelector('input[name="visualization-type"]:checked').value;
             
             const params = {
                 t: paramDefaults.t,
@@ -620,24 +670,42 @@
                 e: paramDefaults.e
             };
             
-            // Update from sliders
-            for (const param of ['t', 'r', 'p', 's', 'd', 'e']) {
-                if (param !== xAxis && param !== yAxis) {
+            // For heatmap, exclude x and y axis parameters
+            if (visualizationType === 'heatmap') {
+                const xAxis = document.getElementById('x-axis').value;
+                const yAxis = document.getElementById('y-axis').value;
+                
+                // Update from sliders
+                for (const param of ['t', 'r', 'p', 's', 'd', 'e']) {
+                    if (param !== xAxis && param !== yAxis) {
+                        const slider = document.getElementById(`${param}-slider`);
+                        if (slider) {
+                            params[param] = parseFloat(slider.value);
+                        }
+                    }
+                }
+                
+                return {
+                    params,
+                    xAxis,
+                    yAxis
+                };
+            } else {
+                // For network graph, get all parameters
+                for (const param of ['t', 'r', 'p', 's', 'd', 'e']) {
                     const slider = document.getElementById(`${param}-slider`);
                     if (slider) {
                         params[param] = parseFloat(slider.value);
                     }
                 }
+                
+                return {
+                    params
+                };
             }
-            
-            return {
-                params,
-                xAxis,
-                yAxis
-            };
         }
 
-        // Function to generate best response data
+        // Function to generate best response data for heatmap
         function generateBestResponseData(resolution = 100) {
             const { params, xAxis, yAxis } = getParameterValues();
             const initialState = parseInt(document.getElementById('initial-state').value);
@@ -685,8 +753,35 @@
             return { xValues, yValues, result };
         }
 
-        // Function to plot the best response data
-        function plotBestResponseData() {
+        // Function to compute all best responses for network graph
+        function computeAllBestResponses() {
+            const { params } = getParameterValues();
+            const stateSpace = document.getElementById('state-space').value;
+            
+            // Choose the appropriate strategy function
+            const strategyFunction = stateSpace === 'wsls' ? wslsBestResponseStrategy : gtBestResponseStrategy;
+            
+            // Compute best responses for all states
+            const bestResponses = [];
+            
+            for (let state = 0; state < 4; state++) {
+                const response = strategyFunction(
+                    params.e, params.d, params.t, params.r, params.p, params.s, state
+                );
+                
+                if (response !== null) {
+                    bestResponses.push({
+                        from: state,
+                        to: response
+                    });
+                }
+            }
+            
+            return bestResponses;
+        }
+
+        // Function to plot the best response heatmap
+        function plotBestResponseHeatmap() {
             const { params, xAxis, yAxis } = getParameterValues();
             const initialState = document.getElementById('initial-state').value;
             const targetState = document.getElementById('target-state').value;
@@ -749,26 +844,272 @@
             Plotly.newPlot('plot', [trace], layout);
         }
 
+        // Function to plot the best response network graph
+        function plotBestResponseNetwork() {
+            const { params } = getParameterValues();
+            const stateSpace = document.getElementById('state-space').value;
+            
+            // Get the state space label
+            const stateSpaceLabel = stateSpace === 'wsls' ? 'Win-Stay-Lose-Shift' : 'Grim-Trigger';
+            
+            // Compute best responses
+            const bestResponses = computeAllBestResponses();
+            
+            // Define node positions (square layout)
+            const nodePositions = [
+                {x: 0, y: 0},   // (0,0) - All D
+                {x: 1, y: 0},   // (0,1) - Anti-WSLS/GT
+                {x: 0, y: 1},   // (1,0) - WSLS/GT
+                {x: 1, y: 1}    // (1,1) - All C
+            ];
+            
+            // Create nodes
+            const nodes = {
+                x: nodePositions.map(p => p.x),
+                y: nodePositions.map(p => p.y),
+                mode: 'markers+text',
+                marker: {
+                    size: 30,
+                    color: ['red', 'orange', 'green', 'blue']
+                },
+                text: Array.from({length: 4}, (_, i) => shortStateLabels[stateSpace][i]),
+                textposition: 'bottom center',
+                hoverinfo: 'text',
+                hovertext: Array.from({length: 4}, (_, i) => stateLabels[stateSpace][i]),
+                type: 'scatter'
+            };
+            
+            // Create edges
+            const edges = [];
+            
+            for (const response of bestResponses) {
+                const fromPos = nodePositions[response.from];
+                const toPos = nodePositions[response.to];
+                
+                // Don't draw self-loops as arrows (handled separately)
+                if (response.from !== response.to) {
+                    // Calculate arrow positions with slight curve for aesthetics
+                    const midX = (fromPos.x + toPos.x) / 2;
+                    const midY = (fromPos.y + toPos.y) / 2;
+                    
+                    // Adjust for potential bidirectional edges
+                    const hasBidirectional = bestResponses.some(r => 
+                        r.from === response.to && r.to === response.from
+                    );
+                    
+                    // If bidirectional, curve the edges
+                    const curveFactor = hasBidirectional ? 0.2 : 0;
+                    
+                    // Perpendicular vector to create curve
+                    const dx = toPos.x - fromPos.x;
+                    const dy = toPos.y - fromPos.y;
+                    const perpX = -dy;
+                    const perpY = dx;
+                    
+                    const controlX = midX + perpX * curveFactor;
+                    const controlY = midY + perpY * curveFactor;
+                    
+                    // Create annotation for the arrow
+                    edges.push({
+                        x: [fromPos.x, controlX, toPos.x],
+                        y: [fromPos.y, controlY, toPos.y],
+                        mode: 'lines',
+                        line: {
+                            width: 2,
+                            color: 'black',
+                            shape: hasBidirectional ? 'spline' : 'linear'
+                        },
+                        hoverinfo: 'none',
+                        type: 'scatter'
+                    });
+                    
+                    // Add arrowhead annotation
+                    // We'll handle this in the layout
+                }
+            }
+            
+            // Add self-loops as separate traces
+            for (const response of bestResponses) {
+                if (response.from === response.to) {
+                    const pos = nodePositions[response.from];
+                    
+                    // Create a loop above the node
+                    const loopSize = 0.15;
+                    const loopX = [
+                        pos.x, 
+                        pos.x + loopSize, 
+                        pos.x, 
+                        pos.x - loopSize, 
+                        pos.x
+                    ];
+                    const loopY = [
+                        pos.y, 
+                        pos.y + loopSize, 
+                        pos.y + loopSize * 2, 
+                        pos.y + loopSize, 
+                        pos.y
+                    ];
+                    
+                    edges.push({
+                        x: loopX,
+                        y: loopY,
+                        mode: 'lines',
+                        line: {
+                            width: 2,
+                            color: 'black',
+                            shape: 'spline'
+                        },
+                        hoverinfo: 'none',
+                        type: 'scatter'
+                    });
+                }
+            }
+            
+            // Create arrowhead annotations
+            const annotations = [];
+            
+            for (const response of bestResponses) {
+                // Skip self-loops for annotations, handled separately
+                if (response.from !== response.to) {
+                    const fromPos = nodePositions[response.from];
+                    const toPos = nodePositions[response.to];
+                    
+                    // Check if bidirectional
+                    const hasBidirectional = bestResponses.some(r => 
+                        r.from === response.to && r.to === response.from
+                    );
+                    
+                    // Calculate vector from -> to
+                    const dx = toPos.x - fromPos.x;
+                    const dy = toPos.y - fromPos.y;
+                    
+                    // Normalize and scale to avoid overlapping with nodes
+                    const length = Math.sqrt(dx*dx + dy*dy);
+                    const scale = 0.8; // Reduce length to avoid overlapping
+                    const normalizedDx = dx / length * scale;
+                    const normalizedDy = dy / length * scale;
+                    
+                    // Adjust for potential bidirectional edges
+                    const curveFactor = hasBidirectional ? 0.2 : 0;
+                    
+                    // Perpendicular vector to create curve
+                    const perpX = -dy;
+                    const perpY = dx;
+                    
+                    // Calculate arrow endpoint with curve adjustment
+                    const endX = fromPos.x + normalizedDx + perpX * curveFactor;
+                    const endY = fromPos.y + normalizedDy + perpY * curveFactor;
+                    
+                    annotations.push({
+                        x: toPos.x,
+                        y: toPos.y,
+                        xref: 'x',
+                        yref: 'y',
+                        axref: 'x',
+                        ayref: 'y',
+                        ax: endX,
+                        ay: endY,
+                        showarrow: true,
+                        arrowhead: 3,
+                        arrowsize: 1.5,
+                        arrowwidth: 2,
+                        standoff: 15  // Distance from the end of the arrow to the point
+                    });
+                }
+            }
+            
+            // Format parameter values for the title
+            const paramsString = Object.entries(params)
+                .map(([key, value]) => `${key}=${value.toFixed(2)}`)
+                .join(', ');
+            
+            // Create the layout
+            const layout = {
+                title: `Best Response Network for ${stateSpaceLabel} State Space<br>(${paramsString})`,
+                showlegend: false,
+                xaxis: {
+                    range: [-0.2, 1.2],
+                    zeroline: false,
+                    showgrid: false,
+                    showticklabels: false,
+                    fixedrange: true
+                },
+                yaxis: {
+                    range: [-0.2, 1.2],
+                    zeroline: false,
+                    showgrid: false,
+                    showticklabels: false,
+                    fixedrange: true,
+                    scaleanchor: 'x',
+                    scaleratio: 1
+                },
+                annotations: annotations,
+                hovermode: 'closest',
+                width: document.getElementById('plot').offsetWidth,
+                height: document.getElementById('plot').offsetHeight
+            };
+            
+            // Combine all traces
+            const allTraces = [nodes, ...edges];
+            
+            // Create the plot
+            Plotly.newPlot('plot', allTraces, layout);
+        }
+
+        // Function to update the UI based on the selected visualization type
+        function updateUI() {
+            const visualizationType = document.querySelector('input[name="visualization-type"]:checked').value;
+            const heatmapControls = document.querySelectorAll('.heatmap-controls');
+            
+            // Show/hide heatmap controls
+            heatmapControls.forEach(control => {
+                control.style.display = visualizationType === 'heatmap' ? 'block' : 'none';
+            });
+            
+            // Update sliders
+            createSliders();
+        }
+
+        // Function to generate visualization based on current settings
+        function generateVisualization() {
+            const visualizationType = document.querySelector('input[name="visualization-type"]:checked').value;
+            
+            if (visualizationType === 'heatmap') {
+                plotBestResponseHeatmap();
+            } else {
+                plotBestResponseNetwork();
+            }
+        }
+
         // Initialize the page
         function initialize() {
             // Set up event listeners
             document.getElementById('x-axis').addEventListener('change', createSliders);
             document.getElementById('y-axis').addEventListener('change', createSliders);
             document.getElementById('state-space').addEventListener('change', function() {
-                // Update state dropdowns and re-generate plot when state space changes
+                // Update state dropdowns and re-generate visualization when state space changes
                 updateStateDropdowns();
-                plotBestResponseData();
+                generateVisualization();
             });
-            document.getElementById('generate-btn').addEventListener('click', plotBestResponseData);
+            
+            // Add event listeners for visualization type toggle
+            document.querySelectorAll('input[name="visualization-type"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    updateUI();
+                    // Don't auto-generate to avoid performance issues - let user click the button
+                });
+            });
+            
+            document.getElementById('generate-btn').addEventListener('click', generateVisualization);
             
             // Initialize state dropdowns
             updateStateDropdowns();
             
-            // Initialize sliders
-            createSliders();
+            // Initialize UI based on default visualization type
+            updateUI();
             
-            // Generate an initial plot
-            plotBestResponseData();
+            // Generate an initial visualization
+            generateVisualization();
         }
 
         // Start the app when the page loads
