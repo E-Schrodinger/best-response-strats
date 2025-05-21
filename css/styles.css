@@ -1,0 +1,105 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.description {
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #4a76a8;
+}
+
+.assumptions {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.control-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.control-group {
+    flex: 1;
+    min-width: 200px;
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.slider-container {
+    margin: 15px 0;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+select, button {
+    padding: 8px;
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+button {
+    background: #4a76a8;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background: #3a5f8a;
+}
+
+.plot-container {
+    width: 100%;
+    height: 600px;
+    border: 1px solid #ddd;
+    margin-top: 20px;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+.value-display {
+    text-align: right;
+    color: #555;
+}
+
+.visualization-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.visualization-toggle label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.visualization-toggle input {
+    margin-right: 5px;
+}
+
+@media (max-width: 768px) {
+    .control-group {
+        min-width: 100%;
+    }
+}
